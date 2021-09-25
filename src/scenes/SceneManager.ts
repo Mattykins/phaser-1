@@ -9,6 +9,7 @@ import { ResetRenderStats } from './ResetRenderStats';
 import { SceneManagerInstance } from './SceneManagerInstance';
 import { WorldList } from '../world/WorldList';
 import { addEntity } from 'bitecs';
+import { Scene } from './Scene';
 
 export class SceneManager
 {
@@ -39,7 +40,35 @@ export class SceneManager
 
         if (scenes)
         {
-            scenes.forEach(scene => new scene());
+            scenes.forEach(sceneCtor =>
+            {
+                let s: IScene;
+                
+                if (typeof sceneCtor === "function")
+                {
+                    if (sceneCtor.prototype.hasOwnProperty("constructor"))
+                    {
+                        s = new sceneCtor();
+                    }
+                    else
+                    {
+                        throw new Error("ISceneConstructor must either be a class extending Scene or an object implementing ISceneProps")
+                    }
+                }
+                else
+                {
+                    s = new Scene();
+                    if (sceneCtor.create) s.create = sceneCtor.create.bind(s);
+                    if (sceneCtor.destroy) s.destroy = sceneCtor.destroy.bind(s);
+                    if (sceneCtor.update) s.update = sceneCtor.update.bind(s);
+                    if (sceneCtor.shutdown) s.shutdown = sceneCtor.shutdown.bind(s);
+                }
+
+                if (s.create)
+                {
+                    s.create();
+                }
+            });
         }
     }
 
